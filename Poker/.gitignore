@@ -2,3 +2,6 @@
 *.iml
 /out
 .idea
+
+/Poker/src/jota/br/*.iml
+/Poker/src/jota/br/*.xml
