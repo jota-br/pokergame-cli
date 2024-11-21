@@ -310,10 +310,10 @@ public class PokerGame {
         winner.forEach(p -> System.out.println("WINNER IS ---> " + p));
     }
 
-    public void startGame() {
+    public void startGame(int players, int cpus) {
 
         Random random = new Random();
-        this.addPlayer(0, 23);
+        this.addPlayer(players, cpus);
 
         long startTime = 0;
         long endTime;
