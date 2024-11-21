@@ -2,9 +2,9 @@ package jota.br;
 
 public class Card {
 
-    private String face;
-    private Suit suit;
-    private int rank;
+    private final String face;
+    private final Suit suit;
+    private final int rank;
 
     public Card(String face, Suit suit, int rank) {
         this.face = face;

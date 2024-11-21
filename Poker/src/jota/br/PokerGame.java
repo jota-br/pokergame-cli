@@ -6,14 +6,14 @@ public class PokerGame {
 
     private int round;
     private int pot;
-    private int bigBlind;
-    private int smallBlind;
-    private List<Player> players;
-    private List<Player> inRound;
-    private List<Card> tableCards;
-    private Deck deck;
+    private final int bigBlind;
+    private final int smallBlind;
+    private final List<Player> players;
+    private final List<Player> inRound;
+    private final List<Card> tableCards;
+    private final Deck deck;
 
-    private Comparator<Card> sortCards = Comparator.comparing(Card::getRank).thenComparing(Card::getSuit);
+    private final Comparator<Card> sortCards = Comparator.comparing(Card::getRank).thenComparing(Card::getSuit);
 
     public PokerGame(int bigBlind, int smallBlind) {
         this.round = 0;
@@ -47,13 +47,13 @@ public class PokerGame {
     public void payBlinds() {
 
         System.out.println("-".repeat(50));
-        System.out.printf("BETS AND SKIPS%n");
+        System.out.printf("BETS AND SKIPS --> ROUND %d%n", this.getRound());
 
         for (Player p : this.players) {
 
             int listSize = this.inRound.size();
-            boolean big = (listSize >= 1) ? this.inRound.getFirst().equals(p) : false;
-            boolean small = (listSize >= 2) ? this.inRound.get(1).equals(p) : false;
+            boolean big = listSize >= 1 && this.inRound.getFirst().equals(p);
+            boolean small = listSize >= 2 && this.inRound.get(1).equals(p);
             if ((big || small) && this.round == 0) {
 
                 int value = (this.inRound.getFirst().equals(p)) ? this.getBigBlind() : this.getSmallBlind();
@@ -79,26 +79,23 @@ public class PokerGame {
                     this.inRound.remove(p);
                 }
             } else {
-                
-                Scanner scanner = new Scanner(System.in);
-                while (true) {
 
-                    printDeck(this.getTableCards());
-                    System.out.print(p);
-                    messages("PLAYER_BET", p);
-                    String response = scanner.nextLine();
-                    if (response.equalsIgnoreCase("Y")) {
-                        
-                        chargeBlind(p, this.getBigBlind());
-                        messages("BET", p);
-                        break;
-                    } else {
-                        
-                        this.inRound.remove(p);
-                        messages("SKIP", p);
-                        break;
-                    }
+                Scanner scanner = new Scanner(System.in);
+
+                printDeck(this.getTableCards());
+                System.out.print(p);
+                messages("PLAYER_BET", p);
+                String response = scanner.nextLine();
+                if (response.equalsIgnoreCase("Y")) {
+
+                    chargeBlind(p, this.getBigBlind());
+                    messages("BET", p);
+                } else {
+
+                    this.inRound.remove(p);
+                    messages("SKIP", p);
                 }
+                break;
             }
         }
 
@@ -129,9 +126,9 @@ public class PokerGame {
             Collections.rotate(this.players, -1);
         }
 
-        System.out.println("-".repeat(50));
+        System.out.println();
     }
-    
+
     public void chargeBlind(Player player, int value) {
         player.setChips(player.getChips() - this.getBigBlind());
         this.pot += value;
@@ -141,7 +138,8 @@ public class PokerGame {
         switch (msgCode.toUpperCase()) {
             case "SKIP" -> System.out.print("SKIPPED THE ROUND --> " + p);
             case "BET" -> System.out.print("PLACED A BET --> " + p);
-            case "PLAYER_BET" -> System.out.print("WRITE Y TO PAY BLIND OF (" + this.bigBlind + ") OR ANY CHARACTER TO SKIP THE ROUND: ");
+            case "PLAYER_BET" ->
+                    System.out.print("WRITE Y TO PAY BLIND OF (" + this.bigBlind + ") OR ANY CHARACTER TO SKIP THE ROUND: ");
         }
     }
 
@@ -274,7 +272,7 @@ public class PokerGame {
         });
     }
 
-    public List<Player> getWinner() {
+    public void getWinner() {
 
         List<Player> winner = new ArrayList<>(1);
         for (Player p : this.getInRound()) {
@@ -310,7 +308,6 @@ public class PokerGame {
         }
         this.pot = 0;
         winner.forEach(p -> System.out.println("WINNER IS ---> " + p));
-        return winner;
     }
 
     public void startGame() {
@@ -319,10 +316,10 @@ public class PokerGame {
         this.addPlayer(0, 23);
 
         long startTime = 0;
-        long endTime = 0;
+        long endTime;
 
         while (round <= 5) {
-            switch(this.getRound()) {
+            switch (this.getRound()) {
                 case 0 -> {
 
                     this.getPlayers().removeIf(p -> p.getChips() < this.getBigBlind());
@@ -382,16 +379,16 @@ public class PokerGame {
     }
 
     public void printDeck(List<Card> deck) {
-        System.out.println("-".repeat(50));
         System.out.printf("ROUND (%d)%n", this.getRound());
         System.out.println(deck);
-        System.out.println("-".repeat(50));
+        System.out.println();
     }
 
     public void printPlayers() {
 
-        System.out.println("PLAYERS IN THIS ROUND");
+        System.out.println("PLAYERS IN ROUND " + this.getRound());
         this.inRound.forEach(System.out::print);
+        System.out.println();
     }
 
     public int getRound() {
