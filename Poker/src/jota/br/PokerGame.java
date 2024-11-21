@@ -29,11 +29,11 @@ public class PokerGame {
     public void addPlayer(int players, int cpus) {
 
         for (int i = 0; i < players; i++) {
-            this.players.add(new Player("PLAYER" + i, 10000, 0, Play.NONE, "PLAYER"));
+            this.players.add(new Player("PLAYER" + i, 1000, 0, Play.NONE, "PLAYER"));
         }
 
         for (int i = 0; i < cpus; i++) {
-            this.players.add(new Player("CPU" + i, 10000, 0, Play.NONE, "CPU"));
+            this.players.add(new Player("CPU" + i, 1000, 0, Play.NONE, "CPU"));
         }
     }
 
@@ -51,7 +51,10 @@ public class PokerGame {
 
         for (Player p : this.players) {
 
-            if ((this.inRound.get(1).equals(p) || this.inRound.getFirst().equals(p)) && this.round == 0) {
+            int listSize = this.inRound.size();
+            boolean big = (listSize >= 1) ? this.inRound.getFirst().equals(p) : false;
+            boolean small = (listSize >= 2) ? this.inRound.get(1).equals(p) : false;
+            if ((big || small) && this.round == 0) {
 
                 int value = (this.inRound.getFirst().equals(p)) ? this.getBigBlind() : this.getSmallBlind();
                 chargeBlind(p, value);
@@ -99,12 +102,28 @@ public class PokerGame {
             }
         }
 
-        if (this.round == 0) {
+        int listSize = this.inRound.size();
+        if (this.round == 0 && listSize >= 2) {
 
-            if (this.players.get(1).getType().equals("CPU")) {
-                chargeBlind(this.players.get(1), this.getSmallBlind());
-            } else {
-                chargeBlind(this.players.get(1), this.getSmallBlind());
+            Player p = this.players.get(1);
+            if (p.getType().equals("CPU") && cpuBet(p)) {
+
+                chargeBlind(p, this.getSmallBlind());
+            } else if (p.getType().equals("PLAYER")) {
+
+                Scanner scanner = new Scanner(System.in);
+                messages("PLAYER_BET", p);
+                String response = scanner.nextLine();
+
+                if (response.equalsIgnoreCase("Y")) {
+
+                    chargeBlind(p, this.getSmallBlind());
+                    messages("BET", p);
+                } else {
+
+                    this.inRound.remove(p);
+                    messages("SKIP", p);
+                }
             }
 
             Collections.rotate(this.players, -1);
@@ -323,7 +342,7 @@ public class PokerGame {
                 case 1, 2, 3 -> {
 
                     endTime = System.currentTimeMillis();
-                    if (endTime - startTime <= 5000) {
+                    if (endTime - startTime <= 0) {
                         continue;
                     }
                     startTime = System.currentTimeMillis();
@@ -334,6 +353,7 @@ public class PokerGame {
                     this.dealTableCards(this.deck.getDeck());
 
                     this.evalHand();
+
                     this.printPlayers();
                     this.printDeck(this.getTableCards());
                     this.round++;
@@ -348,7 +368,7 @@ public class PokerGame {
                 case 5 -> {
 
                     endTime = System.currentTimeMillis();
-                    if (endTime - startTime >= 5000) {
+                    if (endTime - startTime >= 0) {
                         if (this.getPlayers().size() > 1) {
                             this.round = 0;
                         } else {
