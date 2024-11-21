@@ -6,7 +6,7 @@ import java.util.List;
 public class Combinations {
     private List<Integer> ranks = new ArrayList<>(13);
     private List<Suit> suits = new ArrayList<>(4);
-    private List<Integer> duplicatedFaces = new ArrayList<>(List.of(0,0,0,0,0,0,0,0,0,0,0,0,0));
+    private List<Integer> duplicatedFaces = new ArrayList<>(Collections.nCopies(13, 0));
     private boolean hasFiveSuits = false;
     private boolean hasSequence = false;
     private boolean hasAce = false;
