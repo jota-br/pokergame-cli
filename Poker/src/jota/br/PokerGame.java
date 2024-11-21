@@ -29,23 +29,11 @@ public class PokerGame {
     public void addPlayer(int players, int cpus) {
 
         for (int i = 0; i < players; i++) {
-            this.players.add(new Player("PLAYER" + i, 100, 0, Play.NONE, "PLAYER"));
+            this.players.add(new Player("PLAYER" + i, 10000, 0, Play.NONE, "PLAYER"));
         }
 
         for (int i = 0; i < cpus; i++) {
-            this.players.add(new Player("CPU" + i, 100, 0, Play.NONE, "CPU"));
-        }
-    }
-
-    public void dealCardsToPlayers() {
-
-        this.getPlayers().forEach(p -> p.getCards().clear());
-
-        for (int i = 0; i < 2; i++) {
-            this.players.forEach(p -> {
-                p.getCards().add(this.deck.getDeck().getFirst());
-                this.deck.getDeck().removeFirst();
-            });
+            this.players.add(new Player("CPU" + i, 10000, 0, Play.NONE, "CPU"));
         }
     }
 
@@ -59,9 +47,17 @@ public class PokerGame {
     public void payBlinds() {
 
         System.out.println("-".repeat(50));
-        System.out.printf("BETS AND SKIPPED%n");
+        System.out.printf("BETS AND SKIPS%n");
 
         for (Player p : this.players) {
+
+            if ((this.inRound.get(1).equals(p) || this.inRound.getFirst().equals(p)) && this.round == 0) {
+
+                int value = (this.inRound.getFirst().equals(p)) ? this.getBigBlind() : this.getSmallBlind();
+                chargeBlind(p, value);
+                messages("BET", p);
+                continue;
+            }
 
             if (p.getType().equals("CPU")) {
 
@@ -71,34 +67,63 @@ public class PokerGame {
                 }
 
                 if (cpuBet(p)) {
-                    p.setChips(p.getChips() - this.getBigBlind());
-                    this.pot += bigBlind;
 
-                    System.out.print("PLACED A BET --> " + p);
+                    chargeBlind(p, this.getBigBlind());
+                    messages("BET", p);
                 } else {
-                    System.out.print("SKIPPED THE ROUND --> " + p);
+
+                    messages("SKIP", p);
                     this.inRound.remove(p);
                 }
             } else {
+                
                 Scanner scanner = new Scanner(System.in);
                 while (true) {
 
-                    System.out.print("To Pay Big Blind value of " + this.bigBlind + " Digit Y or any character to skip this round: ");
+                    printDeck(this.getTableCards());
+                    System.out.print(p);
+                    messages("PLAYER_BET", p);
                     String response = scanner.nextLine();
-                    if (response.toUpperCase().equals("Y")) {
-                        p.setChips(p.getChips() - this.getBigBlind());
-                        this.pot += this.bigBlind;
+                    if (response.equalsIgnoreCase("Y")) {
+                        
+                        chargeBlind(p, this.getBigBlind());
+                        messages("BET", p);
                         break;
                     } else {
+                        
                         this.inRound.remove(p);
-                        System.out.println("Skipped this round -> " + p);
+                        messages("SKIP", p);
                         break;
                     }
                 }
             }
         }
 
+        if (this.round == 0) {
+
+            if (this.players.get(1).getType().equals("CPU")) {
+                chargeBlind(this.players.get(1), this.getSmallBlind());
+            } else {
+                chargeBlind(this.players.get(1), this.getSmallBlind());
+            }
+
+            Collections.rotate(this.players, -1);
+        }
+
         System.out.println("-".repeat(50));
+    }
+    
+    public void chargeBlind(Player player, int value) {
+        player.setChips(player.getChips() - this.getBigBlind());
+        this.pot += value;
+    }
+
+    public void messages(String msgCode, Player p) {
+        switch (msgCode.toUpperCase()) {
+            case "SKIP" -> System.out.print("SKIPPED THE ROUND --> " + p);
+            case "BET" -> System.out.print("PLACED A BET --> " + p);
+            case "PLAYER_BET" -> System.out.print("WRITE Y TO PAY BLIND OF (" + this.bigBlind + ") OR ANY CHARACTER TO SKIP THE ROUND: ");
+        }
     }
 
     public boolean cpuBet(Player cpu) {
@@ -136,6 +161,18 @@ public class PokerGame {
         }
     }
 
+    public void dealCardsToPlayers() {
+
+        this.getPlayers().forEach(p -> p.getCards().clear());
+
+        for (int i = 0; i < 2; i++) {
+            this.players.forEach(p -> {
+                p.getCards().add(this.deck.getDeck().getFirst());
+                this.deck.getDeck().removeFirst();
+            });
+        }
+    }
+
     public void dealTableCards(List<Card> deck) {
 
         switch (this.round) {
@@ -148,10 +185,6 @@ public class PokerGame {
                 deck.removeFirst();
             }
         }
-        System.out.println("-".repeat(50));
-        System.out.printf("ROUND (%d)%n", this.getRound());
-        System.out.println(this.tableCards);
-        System.out.println("-".repeat(50));
     }
 
     public void evalHand() {
@@ -266,9 +299,13 @@ public class PokerGame {
         Random random = new Random();
         this.addPlayer(0, 23);
 
-        while (round <= 4) {
+        long startTime = 0;
+        long endTime = 0;
+
+        while (round <= 5) {
             switch(this.getRound()) {
                 case 0 -> {
+
                     this.getPlayers().removeIf(p -> p.getChips() < this.getBigBlind());
                     this.deck.getStandardDeck();
                     Collections.shuffle(this.deck.getDeck());
@@ -284,6 +321,12 @@ public class PokerGame {
                     this.round++;
                 }
                 case 1, 2, 3 -> {
+
+                    endTime = System.currentTimeMillis();
+                    if (endTime - startTime <= 5000) {
+                        continue;
+                    }
+                    startTime = System.currentTimeMillis();
                     this.deck.getStandardDeck();
                     Collections.shuffle(this.deck.getDeck());
                     Collections.rotate(this.deck.getDeck(), random.nextInt(20, 30));
@@ -292,21 +335,37 @@ public class PokerGame {
 
                     this.evalHand();
                     this.printPlayers();
+                    this.printDeck(this.getTableCards());
                     this.round++;
                 }
                 case 4 -> {
 
+                    startTime = System.currentTimeMillis();
+                    this.getWinner();
                     this.getTableCards().clear();
-                    if (this.getPlayers().size() > 1) {
-                        this.round = 0;
-                        this.getWinner();
-                    } else {
-                        this.getWinner();
-                        this.round++;
+                    this.round++;
+                }
+                case 5 -> {
+
+                    endTime = System.currentTimeMillis();
+                    if (endTime - startTime >= 5000) {
+                        if (this.getPlayers().size() > 1) {
+                            this.round = 0;
+                        } else {
+                            this.round++;
+                        }
+                        startTime = System.currentTimeMillis();
                     }
                 }
             }
         }
+    }
+
+    public void printDeck(List<Card> deck) {
+        System.out.println("-".repeat(50));
+        System.out.printf("ROUND (%d)%n", this.getRound());
+        System.out.println(deck);
+        System.out.println("-".repeat(50));
     }
 
     public void printPlayers() {
