@@ -48,17 +48,22 @@ public class PokerGame {
         System.out.println("-".repeat(50));
         System.out.printf("BETS AND SKIPS --> ROUND %d%n", this.getRound());
 
-        for (Player p : this.players) {
+        Iterator<Player> iterator = this.getInRound().iterator();
+        if (iterator.hasNext()) {
+            Player p = iterator.next();
 
-            int listSize = this.inRound.size();
+            int listSize = this.getInRound().size();
             boolean big = listSize >= 1 && this.inRound.getFirst().equals(p);
             boolean small = listSize >= 2 && this.inRound.get(1).equals(p);
+
             if ((big || small) && this.round == 0) {
 
                 int value = (this.inRound.getFirst().equals(p)) ? this.getBigBlind() : this.getSmallBlind();
                 chargeBlind(p, value);
                 messages("BET", p);
-                continue;
+                if (iterator.hasNext()) {
+                    p = iterator.next();
+                }
             }
 
             if (p.getType().equals("CPU")) {
@@ -81,6 +86,7 @@ public class PokerGame {
 
                 Scanner scanner = new Scanner(System.in);
 
+                System.out.print("TABLES CARDS --> ");
                 printDeck(this.getTableCards());
                 System.out.print(p);
                 messages("PLAYER_BET", p);
@@ -94,38 +100,9 @@ public class PokerGame {
                     this.inRound.remove(p);
                     messages("SKIP", p);
                 }
-                break;
+                System.out.println();
             }
         }
-
-        int listSize = this.inRound.size();
-        if (this.round == 0 && listSize >= 2) {
-
-            Player p = this.players.get(1);
-            if (p.getType().equals("CPU") && cpuBet(p)) {
-
-                chargeBlind(p, this.getSmallBlind());
-            } else if (p.getType().equals("PLAYER")) {
-
-                Scanner scanner = new Scanner(System.in);
-                messages("PLAYER_BET", p);
-                String response = scanner.nextLine();
-
-                if (response.equalsIgnoreCase("Y")) {
-
-                    chargeBlind(p, this.getSmallBlind());
-                    messages("BET", p);
-                } else {
-
-                    this.inRound.remove(p);
-                    messages("SKIP", p);
-                }
-            }
-
-            Collections.rotate(this.players, -1);
-        }
-
-        System.out.println();
     }
 
     public void chargeBlind(Player player, int value) {
@@ -296,6 +273,11 @@ public class PokerGame {
 
     public void startGame(int players, int cpus) {
 
+        if (players + cpus > 23) {
+            System.out.println("Maximum number of players is 23");
+            return;
+        }
+
         Random random = new Random();
         this.addPlayer(players, cpus);
 
@@ -364,8 +346,8 @@ public class PokerGame {
     }
 
     public void printDeck(List<Card> deck) {
-        System.out.printf("ROUND (%d)%n", this.getRound());
-        System.out.println(deck);
+        System.out.print(deck);
+        System.out.printf(" --> ROUND (%d)%n", this.getRound());
         System.out.println();
     }
 
