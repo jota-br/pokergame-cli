@@ -59,6 +59,6 @@ public class Player {
 
     @Override
     public String toString() {
-        return "%s CHIPS:(%d) SCORE:(%d) PLAY:(%s) [%s] -> %s%n".formatted(name, chips, score, play, type, cards);
+        return "%-10s CHIPS:(%d) SCORE:(%d) PLAY:(%s) [%s] -> %s%n".formatted(name, chips, score, play, type, cards);
     }
 }

@@ -4,16 +4,15 @@ import java.util.*;
 
 public class PokerGame {
 
-    private int round;
-    private int pot;
     private final int bigBlind;
     private final int smallBlind;
     private final List<Player> players;
     private final List<Player> inRound;
     private final List<Card> tableCards;
     private final Deck deck;
-
     private final Comparator<Card> sortCards = Comparator.comparing(Card::getRank).thenComparing(Card::getSuit);
+    private int round;
+    private int pot;
 
     public PokerGame(int bigBlind, int smallBlind) {
         this.round = 0;
@@ -145,37 +144,17 @@ public class PokerGame {
 
     public boolean cpuBet(Player cpu) {
 
-        Random random = new Random();
-        int bound = random.nextInt(25);
+        boolean[] hasChance = new boolean[]{
+                cpu.getPlay().ordinal() > 1,
+                cpu.getScore() > 9,
+                cpu.getCards().getFirst().getRank() + 1 == cpu.getCards().getLast().getRank() && this.getRound() == 0,
+                cpu.getCards().getFirst().getSuit().equals(cpu.getCards().getLast().getSuit()) && this.getRound() == 0
+        };
 
-        if (this.getRound() == 0) {
-
-            if (cpu.getScore() < 6 && cpu.getPlay().equals(Play.NONE)) {
-                return bound > 18;
-            } else if (cpu.getScore() < 9 && cpu.getPlay().equals(Play.NONE)) {
-                return bound > 15;
-            } else {
-                return bound > 6;
-            }
-
-        } else {
-
-            if (cpu.getPlay().equals(Play.NONE)) {
-                return false;
-            } else {
-                if (cpu.getPlay().ordinal() == 0 && cpu.getScore() < 9) {
-                    return false;
-                } else if (cpu.getPlay().ordinal() > 1) {
-                    return bound > 15;
-                } else if (cpu.getPlay().ordinal() > 2) {
-                    return bound > 10;
-                } else if (cpu.getPlay().ordinal() > 3) {
-                    return bound > 5;
-                } else {
-                    return true;
-                }
-            }
+        for (boolean b : hasChance) {
+            if (b) return true;
         }
+        return false;
     }
 
     public void dealCardsToPlayers() {
@@ -234,14 +213,19 @@ public class PokerGame {
                 }
             });
 
+            int sequence = 0;
             combinations.getRanks().sort(Comparator.naturalOrder());
             for (int i = 0; i < combinations.getRanks().size() - 1; i++) {
                 if (combinations.getRanks().get(i) + 1 == combinations.getRanks().get(i + 1)) {
-                    combinations.setHasSequence(true);
+                    sequence++;
                 } else {
                     combinations.setHasSequence(false);
                     break;
                 }
+            }
+
+            if (sequence == 5) {
+                combinations.setHasSequence(true);
             }
 
             if ((combinations.hasSequence() && combinations.hasFiveSuits()) || (combinations.hasSequence() && combinations.hasFiveSuits())) {
@@ -350,6 +334,7 @@ public class PokerGame {
                     this.dealTableCards(this.deck.getDeck());
 
                     this.evalHand();
+                    this.payBlinds();
 
                     this.printPlayers();
                     this.printDeck(this.getTableCards());
@@ -417,5 +402,50 @@ public class PokerGame {
 
     public List<Card> getTableCards() {
         return tableCards;
+    }
+
+    class Combinations {
+        private final List<Integer> ranks = new ArrayList<>(13);
+        private final List<Suit> suits = new ArrayList<>(4);
+        private final List<Integer> duplicatedFaces = new ArrayList<>(Collections.nCopies(13, 0));
+        private boolean hasFiveSuits = false;
+        private boolean hasSequence = false;
+        private boolean hasAce = false;
+
+        public List<Integer> getRanks() {
+            return ranks;
+        }
+
+        public List<Suit> getSuits() {
+            return suits;
+        }
+
+        public List<Integer> getDuplicatedFaces() {
+            return duplicatedFaces;
+        }
+
+        public boolean hasFiveSuits() {
+            return hasFiveSuits;
+        }
+
+        public void setHasFiveSuits(boolean hasFiveSuits) {
+            this.hasFiveSuits = hasFiveSuits;
+        }
+
+        public boolean hasSequence() {
+            return hasSequence;
+        }
+
+        public void setHasSequence(boolean hasSequence) {
+            this.hasSequence = hasSequence;
+        }
+
+        public boolean hasAce() {
+            return hasAce;
+        }
+
+        public void setHasAce(boolean hasAce) {
+            this.hasAce = hasAce;
+        }
     }
 }
